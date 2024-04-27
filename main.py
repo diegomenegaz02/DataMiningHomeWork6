@@ -1,0 +1,136 @@
+
+import pandas as pd
+from itertools import combinations
+
+
+
+
+if __name__ == '__main__':
+    data = [
+        ("Snow", "Yes", "No", "Yes"),
+        ("Overcast", "No", "No", "No"),
+        ("Sunny", "Yes", "No", "Yes"),
+        ("Overcast", "Yes", "Yes", "Yes"),
+        ("Overcast", "No", "Yes", "Yes"),
+        ("Snow", "No", "Yes", "No"),
+        ("Overcast", "Yes", "No", "No"),
+        ("Sunny", "Yes", "No", "No"),
+        ("Sunny", "No", "Yes", "Yes"),
+        ("Snow", "No", "Yes", "Yes"),
+        ("Snow", "Yes", "No", "No"),
+        ("Overcast", "Yes", "No", "No"),
+        ("Overcast", "No", "Yes", "Yes"),
+        ("Sunny", "No", "Yes", "Yes"),
+        ("Snow", "Yes", "Yes", "No")
+    ]
+    count_yes = 0
+    count_no = 0
+    for record in data:
+        if record[3] == "Yes":
+            count_yes += 1
+        elif record[3] == "No":
+            count_no += 1
+    total_records = len(data)
+    print("Problem 1\n"
+          "A:\n ")
+    p_c1 = count_yes / total_records
+    p_c2 = count_no / total_records
+    print(f"Prior probability of 'Yes' (c1): {p_c1}")
+    print(f"Prior probability of 'No' (c2): {p_c2}")
+
+    print("Problem 1.2\n")
+    feature_counts_yes = {'Sunny': 0, 'Weekend_Yes': 0, 'HW_No': 0, 'Total_Yes': 0}
+    feature_counts_no = {'Sunny': 0, 'Weekend_Yes': 0, 'HW_No': 0, 'Total_No': 0}
+    for weather, weekend, hw, hiking in data:
+        if hiking == "Yes":
+            feature_counts_yes['Total_Yes'] += 1
+            if weather == "Sunny":
+                feature_counts_yes['Sunny'] += 1
+            if weekend == "Yes":
+                feature_counts_yes['Weekend_Yes'] += 1
+            if hw == "No":
+                feature_counts_yes['HW_No'] += 1
+        elif hiking == "No":
+            feature_counts_no['Total_No'] += 1
+            if weather == "Sunny":
+                feature_counts_no['Sunny'] += 1
+            if weekend == "Yes":
+                feature_counts_no['Weekend_Yes'] += 1
+            if hw == "No":
+                feature_counts_no['HW_No'] += 1
+    p_x_given_c1 = (feature_counts_yes['Sunny'] / feature_counts_yes['Total_Yes'] *
+                    feature_counts_yes['Weekend_Yes'] / feature_counts_yes['Total_Yes'] *
+                    feature_counts_yes['HW_No'] / feature_counts_yes['Total_Yes'])
+    p_x_given_c2 = (feature_counts_no['Sunny'] / feature_counts_no['Total_No'] *
+                    feature_counts_no['Weekend_Yes'] / feature_counts_no['Total_No'] *
+                    feature_counts_no['HW_No'] / feature_counts_no['Total_No'])
+    print(f"p(x | c1) = {p_x_given_c1}")
+    print(f"p(x | c2) = {p_x_given_c2}")
+
+
+    print("Problem 1.3 \n")
+    total_records = len(data)
+    p_c1 = feature_counts_yes['Total_Yes'] / total_records
+    p_c2 = feature_counts_no['Total_No'] / total_records
+    p_x_c1 =  p_x_given_c1 * p_c1
+    p_x_c2  = p_x_given_c2 * p_c2
+    print(f"p(x | c1) * p(c1) = {p_x_c1}")
+    print(f"p(x | c2) * p(c2) = {p_x_c2}")
+
+
+    print("Problem 1.4 \n")
+    print("New Data Instance should be assigned to the class \"No\"\n")
+
+
+    print("Problem 2\n")
+    data2 = {
+    'Transaction ID': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    'Items': [
+        ['toilet paper', 'beans', 'rice', 'milk', 'baby wipes', 'diapers'],
+        ['oat milk', 'beans', 'toilet paper', 'orange juice'],
+        ['oat milk', 'milk', 'orange juice', 'toilet paper'],
+        ['beans', 'toilet paper', 'baby wipes', 'diapers'],
+        ['toilet paper', 'butter', 'baby wipes', 'diapers'],
+        ['milk', 'toilet paper', 'orange juice'],
+        ['milk', 'rice', 'toilet paper'],
+        ['beans', 'milk', 'rice', 'toilet paper'],
+        ['milk', 'butter', 'diapers'],
+        ['beans', 'rice', 'toilet paper', 'baby wipes']
+    ]
+    }
+    df = pd.DataFrame(data2)
+    oneHot = df['Items'].apply(lambda x: pd.Series(1,index=x)).fillna(0)
+
+
+    print(" A: Support of the itemset {milk, toilet paper}")
+    support_milk_tp = ((oneHot['milk'] + oneHot['toilet paper']) == 2).mean()
+    print(f"Support of the itemset {{milk, toilet paper}}: {support_milk_tp}")
+
+    print(" B: Frequent itemsets of size 2 with minimum support threshold of 4")
+    min_support = 4
+    itemsets = list(combinations(oneHot.columns, 2))
+    frequent_itemsets_2 = []
+    for itemset in itemsets:
+        support = ((oneHot[list(itemset)].sum(axis=1) == len(itemset)).mean())
+        if support >= min_support / len(df):
+            frequent_itemsets_2.append((itemset, support))
+    print("Frequent itemsets of size 2 with a minimum support threshold of 4:")
+    for itemset, support in frequent_itemsets_2:
+        print(f"{itemset}: {support}")
+
+    print(" C: Candidate itemsets of size 3 using A-Priori algorithm")
+    frequent_items = [item for itemset, _ in frequent_itemsets_2 for item in itemset]
+    frequent_items = list(set(frequent_items))
+    candidate_itemsets_3 = list(combinations(frequent_items, 3))
+    print("Candidate itemsets of size 3 generated by the A-Priori algorithm:")
+    for itemset in candidate_itemsets_3:
+        print(itemset)
+
+    print(" D. Confidence of the rule rice -> beans / E. beans -> rice")
+    support_rice = (oneHot['rice'] == 1).mean()
+    support_beans = (oneHot['beans'] == 1).mean()
+    support_rice_beans = ((oneHot['rice'] + oneHot['beans']) == 2).mean()
+    confidence_rice_to_beans = support_rice_beans / support_rice if support_rice != 0 else 0
+    confidence_beans_to_rice = support_rice_beans / support_beans if support_beans != 0 else 0
+    print(f"Confidence of the rule {{rice}} -> {{beans}}: {confidence_rice_to_beans:.4f}")
+    print(f"Confidence of the rule {{beans}} -> {{rice}}: {confidence_beans_to_rice:.4f}")
